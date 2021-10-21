@@ -2,7 +2,6 @@ import json
 import os
 import pickle
 import logging
-import sys
 
 from bs4 import BeautifulSoup
 import requests as req
@@ -12,6 +11,37 @@ import re
 logging.basicConfig(filename="log.log", filemode="w", level=logging.INFO)
 logger = logging.getLogger("logger")
 default_dir = 'earthquake_data'
+site = "http://www.gsras.ru/ftp/Teleseismic_Catalog/"
+
+
+def initial_message():
+    print("Welcome to the earthquake scraping script")
+    print(f"Data of earthquakes will be scraped from {site}")
+    print("-"*20)
+    print("Choose an option:\n"
+          "1. Fetch fresh data\n"
+          "2. Start proceed of existing data\n"
+          "3. Refresh and start proceed of data")
+
+
+def choice():
+    option = int(input("Enter your choice: "))
+    if option == 1:
+        fetch_files()
+    elif option == 2:
+        name = input("Where you want to put data? (Enter directory name, absolute path or leave blank)")
+        if name:
+            parse_files(name)
+        else:
+            parse_files()
+    elif option == 3:
+        fetch_files()
+        name = input("Where you want to put data? (Enter directory name, absolute path or leave blank)")
+        if name:
+            parse_files(name)
+        else:
+            parse_files()
+
 
 def fetch_files():
     """Function fetches catalogs and files from site with records of earthquakes,
@@ -19,7 +49,7 @@ def fetch_files():
 
     :return:
     """
-    main_catalog = "http://www.gsras.ru/ftp/Teleseismic_Catalog/"
+    main_catalog = site
     files = []
     res = req.get(main_catalog)
     soup = BeautifulSoup(res.text, "lxml")
@@ -67,6 +97,12 @@ def parse_files(dir_name=default_dir):
     file_name = 0
     for file in files:
         datas = []
+
+        info = dict()
+        info.update({"URL": file})
+
+        datas.append(info)
+
         data = dict()
         flag = False
         for i in range(5):
@@ -95,19 +131,13 @@ def parse_files(dir_name=default_dir):
                     data.update({"magnitude": elements[8]})
                     datas.append(data.copy())
                     data.clear()
-        datas = datas
-        info = dict()
-        info.update({"URL": file})
         with open(f"{dir_name}/" + str(file_name) + ".json", "w") as f:
-            json.dump(info, f)
-            # json.dump(datas, f)
+            json.dump(datas, f)
         logger.info(f"{dir_name}/%d.json was created" % file_name)
         file_name += 1
     logger.info("Done")
 
 
 if __name__ == '__main__':
-    if len(temp := sys.argv) > 1:
-        parse_files(temp[1])
-    else:
-        parse_files()
+    initial_message()
+    choice()
