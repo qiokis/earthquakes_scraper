@@ -15,9 +15,9 @@ site = "http://www.gsras.ru/ftp/Teleseismic_Catalog/"
 
 
 def initial_message():
-    print("Welcome to the earthquake scraping script")
-    print(f"Data of earthquakes will be scraped from {site}")
-    print("-"*20)
+    print("Welcome to the earthquake scraping script.")
+    print(f"Data of earthquakes will be scraped from {site}.")
+    print("-"*100)
     print("Choose an option:\n"
           "1. Fetch fresh data\n"
           "2. Start proceed of existing data\n"
@@ -98,10 +98,10 @@ def parse_files(dir_name=default_dir):
     for file in files:
         datas = []
 
-        info = dict()
-        info.update({"URL": file})
-
-        datas.append(info)
+        # info = dict()
+        # info.update({"URL": file})
+        #
+        # datas.append(info)
 
         data = dict()
         flag = False
