@@ -1,7 +1,6 @@
 import re
 import requests as req
 from bs4 import BeautifulSoup
-import json
 import logging
 import config
 
@@ -26,10 +25,7 @@ class Fetcher:
     files = []
     main_catalog = site
 
-    def __init__(self):
-        pass
-
-    def fetch_catalog(self):
+    def fetch_link_catalog(self):
         """Function fetches catalogs and files from site with records of earthquakes,
         save it to list and serialize with pickle
 
@@ -54,10 +50,10 @@ class Fetcher:
                     if any([YEAR_PATTERN.match(el1.text),
                            YEAR_MONTH_PATTERN.match(el1.text),
                            YEAR_MONTH_SHARDED_PATTERN.match(el1.text)]):
-                        self.fetch_file(el.text + el1.text)
+                        self.fetch_link_file(el.text + el1.text)
 
             elif file_pattern.match(el.text):
-                self.fetch_file(el.text)
+                self.fetch_link_file(el.text)
 
         try:
             self.fw.write(self.files)
@@ -65,7 +61,7 @@ class Fetcher:
         except BaseException as error:
             logger.error(error)
 
-    def fetch_file(self, name):
+    def fetch_link_file(self, name):
         # Site had changed structure of files for 3 times, so here 3 types of proceeding
         # For files, where file have only year in name
         file_name = name.split('/')[-1]
@@ -81,16 +77,20 @@ class Fetcher:
             self.files.append({'link': self.main_catalog + name,
                                'type': 2})
 
-    def year_proceed(self):
-        pass
-
-    def year_month_proceed(self):
-        pass
-
-    def year_month_sharded_proceed(self):
-        pass
-
-
-if __name__ == '__main__':
-    f = Fetcher()
-    f.fetch_catalog()
+    def fetch_file(self, file_link):
+        flag = False
+        for i in range(config.max_attempts):
+            try:
+                logger.info("Attempt:%d | Trying fetch data from %s" % (i, file_link))
+                res = req.get(file_link, timeout=2)
+                flag = True
+            except req.exceptions.Timeout as err:
+                logger.error("Failed | %s" % err)
+                continue
+            break
+        if not flag:
+            return -1
+        logger.info("Fetching successful")
+        res = req.get(file_link)
+        soup = BeautifulSoup(res.text, "lxml")
+        return soup.text
