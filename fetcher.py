@@ -6,11 +6,9 @@ import config as c
 
 from file_writer import FileWriter
 
-site = "http://www.gsras.ru/ftp/Teleseismic_Catalog/"
-max_attempts = 5
 
-logging.basicConfig(format=c.log_format, filename=c.logger_file,
-                    datefmt=c.date_format, filemode="w", level=logging.INFO)
+# logging.basicConfig(format=c.log_format, filename=c.logger_file,
+#                     datefmt=c.date_format, filemode="w", level=logging.INFO)
 logger = logging.getLogger("Fetcher")
 
 
@@ -18,7 +16,7 @@ class Fetcher:
 
     fw = FileWriter()
     files = []
-    main_catalog = site
+    main_catalog = c.site
 
     def fetch_link_catalog(self):
         """Function fetches catalogs and files from site with records of earthquakes,
@@ -42,7 +40,6 @@ class Fetcher:
                 temp = self.main_catalog + el.text
                 res = req.get(temp)
                 soup1 = BeautifulSoup(res.text, "lxml")
-                print(el)
 
                 for el1 in soup1.find_all("td"):
                     if any([c.YEAR_PATTERN.match(el1.text),
@@ -57,6 +54,7 @@ class Fetcher:
             self.fw.write(self.files, c.catalog_file)
             logger.info("Catalog was successfully fetched")
         except BaseException as error:
+            pass
             logger.error(error)
 
     def fetch_link_file(self, name):
@@ -91,5 +89,5 @@ class Fetcher:
         if not flag:
             return -1
         logger.info("Fetching successful")
-        soup = BeautifulSoup(res.text, "lxml")
-        return soup.text
+        res = res.text.split("------------------------------------------------------------")[2].split("\n")
+        return res
