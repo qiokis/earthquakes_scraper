@@ -1,14 +1,14 @@
 import logging
 import json
-import requests as req
 import re
 
 import config as c
 from file_writer import FileWriter
+from fetcher import Fetcher
 
-logging.basicConfig(format=c.log_format, filename=c.logger_file,
-                    datefmt=c.date_format, filemode="w", level=logging.INFO)
-logger = logging.getLogger("Fetcher")
+# logging.basicConfig(format=c.log_format, filename=c.logger_file,
+#                     datefmt=c.date_format, filemode="w", level=logging.INFO)
+logger = logging.getLogger("Parser")
 
 
 class Parser:
@@ -24,7 +24,7 @@ class Parser:
         with open(c.catalog_file, 'r') as file:
             self.links = json.load(file)
 
-    def parse_file(self):
+    def parse(self):
         """Function parsing data from files and save it to json
 
         :return:
@@ -32,8 +32,11 @@ class Parser:
 
         for dictionary in self.links:
             file_link, file_type = dictionary['link'], dictionary['type']
-            res = req.get(file_link)
-            all_data = res.text.split("------------------------------------------------------------")[2].split("\n")
+
+            all_data = Fetcher.fetch_file(file_link)
+
+            logger.info(f"{file_link} parsing started")
+
             if file_type == 0:
                 result = self.parse_year_file(all_data)
                 year = re.search(r'\d+', file_link.split('/')[-1])
@@ -64,6 +67,7 @@ class Parser:
                                                     {'year': year, 'month': month, 'part': part})
                 file_name = f"{year}-{month}-{part}.json"
 
+            logger.info(f"{file_link} parsed successfully")
             self.fw.write(result, file_name, c.json_directory)
 
     def parse_year_file(self, site_data):
@@ -133,7 +137,3 @@ class Parser:
                     datas.append(data.copy())
                     data.clear()
         return datas
-
-
-p = Parser()
-p.parse_file()
